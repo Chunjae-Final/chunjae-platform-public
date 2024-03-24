@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.chunjae.question.mapper.QuestionMapper">
+<!--    신수진-->
+    <!-- 응시 중인 시험지 ID에 해당하는 문항 ID를 뽑는다. -->
+    <select id="findPaperQuestion" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT id
+        FROM tb_question
+        WHERE paper_id = #{paperId}
+    </select>
+
+
+
+<!--    변재혁-->
+    <select id="getQuestionListByPaperId" resultType="kr.co.chunjae.question.dto.QuestionDto" parameterType="java.lang.Integer">
+        SELECT id, paper_id, section_id, unit_id, sequence,
+            score, question_type, title, content, choices,
+            other_choices, answer, explanation
+        FROM tb_question
+        WHERE paper_id = #{paperId}
+        ORDER BY sequence ASC
+    </select>
+
+    <select id="getQuestionAnswerByQuestionId" resultType="java.lang.String" parameterType="java.lang.Integer">
+        SELECT answer
+        FROM tb_question
+        WHERE id = #{questionId}
+    </select>
+
+    <select id="getAllQuestionIdListByPaperId" resultType="java.lang.Integer" parameterType="java.lang.Integer">
+        SELECT id
+        FROM tb_question
+        WHERE paper_id = #{paperId}
+    </select>
+
+    <select id="getSpecificQuestionByQuestionId" resultType="kr.co.chunjae.question.dto.QuestionDto"
+            parameterType="java.lang.Integer">
+        SELECT id, question_type, title, content, choices, other_choices, answer, explanation
+        FROM tb_question
+        WHERE id = #{questionId}
+    </select>
+
+
+<!--    이무현-->
+
+
+<!--    최경락-->
+
+
+<!--    최재혁-->
+
+
+</mapper>

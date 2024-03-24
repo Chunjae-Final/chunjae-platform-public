@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.chunjae.user.mapper.UserMapper">
+    <!--    신수진-->
+
+
+    <!--    변재혁-->
+
+
+    <!--    이무현-->
+
+
+    <!--    최경락-->
+
+    <!-- 회원 정보 Get  -->
+    <select id="getUserByPhone" resultType="kr.co.chunjae.user.dto.UserDTO" parameterType="java.lang.String">
+        SELECT phone, name, password, grade
+        FROM tb_student
+        WHERE phone = #{phone}
+    </select>
+
+    <!--  회원 가입  -->
+    <insert id="insertUser" parameterType="kr.co.chunjae.user.dto.UserRequestDTO">
+        INSERT INTO
+        tb_student
+        (phone, name, password, grade)
+        VALUES(#{phone}, #{name}, #{password}, #{grade})
+    </insert>
+
+    <!-- 중복 체크  -->
+    <select id="phoneCheck" resultType="boolean">
+        SELECT COUNT(*)
+        FROM tb_student
+        WHERE phone = #{phone}
+    </select>
+
+    <select id="selectByPhone" resultType="int" parameterType="string">
+        SELECT COUNT(*)
+        FROM tb_student
+        WHERE phone = #{phone}
+    </select>
+
+    <select id="findByPhone" resultType="kr.co.chunjae.user.dto.UserDTO">
+        SELECT phone
+        FROM tb_student
+        WHERE phone = #{phone}
+    </select>
+
+    <!--  회원 정보 수정  -->
+    <update id="updateUser">
+        UPDATE tb_student
+        SET
+            grade = #{grade}
+        WHERE
+            phone = #{phone}
+    </update>
+
+    <!--  회원 탈퇴  -->
+    <delete id="deleteUser">
+        DELETE phone
+        FROM tb_student
+        WHERE phone = #{phone} AND password = #{password}
+    </delete>
+    <!--    최재혁-->
+
+
+</mapper>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.chunjae.test.QuestionMapperTest">
+    <select id="questionList" resultType="kr.co.chunjae.test.QuestionDtoTest" parameterType="java.lang.Integer">
+        SELECT id, paper_id, section_id, unit_id, sequence, score,
+                question_type, title, content, choices,
+                other_choices, answer, explanation
+        FROM tb_question
+        WHERE paper_id = #{paperId}
+        ORDER BY sequence ASC
+    </select>
+</mapper>

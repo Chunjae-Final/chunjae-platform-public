@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.chunjae.map.mapper.MapMapper">
+<!--    <insert id="insertSchool" parameterType="kr.co.chunjae.map.dto.SchoolDto">-->
+<!--        INSERT-->
+<!--        INTO tb_school (id, school_name, school_type, address, latitude, longitude, latitude_longitude)-->
+<!--        VALUES (#{id}, #{schoolName}, #{schoolType}, #{address},-->
+<!--        #{latitude}, #{longitude}, ST_GeomFromText('POINT(${longitudeDouble} ${latitudeDouble})'))-->
+<!--    </insert>-->
+
+    <select id="getSurroundSchoolList" parameterType="kr.co.chunjae.map.dto.SurroundSchoolListRequestDto"
+            resultType="kr.co.chunjae.map.dto.SchoolDto">
+        SELECT id, school_name, school_type, address, latitude, longitude
+        FROM tb_school
+        WHERE ST_Distance_Sphere(latitude_longitude, ST_GeomFromText('POINT(${currentLongitude} ${currentLatitude})')) &lt; #{surroundMeter}
+    </select>
+
+    <select id="getSchoolInformationById" parameterType="java.lang.String" resultType="kr.co.chunjae.map.dto.SchoolDto">
+        SELECT id, school_name, school_type, address, latitude, longitude
+        FROM tb_school
+        WHERE id = #{schoolId}
+    </select>
+</mapper>

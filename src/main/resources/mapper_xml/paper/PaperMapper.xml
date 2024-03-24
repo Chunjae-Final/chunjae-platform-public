@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.chunjae.paper.mapper.PaperMapper">
+<!--    신수진-->
+
+
+<!--    변재혁-->
+    <select id="getPaperTypeByPaperId" resultType="java.util.HashMap" parameterType="java.lang.Integer">
+        SELECT tb_paper_type.id, tb_paper_type.name
+        FROM tb_paper INNER JOIN tb_paper_type
+            ON tb_paper.paper_type_id = tb_paper_type.id
+        WHERE tb_paper.id = #{paperId}
+    </select>
+
+    <select id="getPaperByPaperId" resultType="kr.co.chunjae.paper.dto.PaperDto" parameterType="java.lang.Integer">
+        SELECT id, subject_id, paper_type_id, name, grade, time_limit, question_count
+        FROM tb_paper
+        WHERE id = #{paperId}
+    </select>
+
+    <select id="getPaperIdListByPaperTypeId" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT id
+        FROM tb_paper
+        WHERE paper_type_id = #{paperType}
+    </select>
+
+
+<!--    이무현-->
+
+
+<!--    최경락-->
+
+
+<!--    최재혁-->
+
+
+</mapper>

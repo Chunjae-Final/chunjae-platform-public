@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.chunjae.correct_rate.mapper.CorrectRateMapper">
+<!--    신수진-->
+
+
+<!--    변재혁-->
+    <select id="checkIfQuestionIdExists" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM tb_correct_rate
+        WHERE id = #{questionId}
+    </select>
+
+    <insert id="insertNewQuestionId" parameterType="java.lang.Integer">
+        INSERT
+        INTO tb_correct_rate (id, student_count, correct_count)
+        VALUES (#{questionId}, 0, 0)
+    </insert>
+
+    <update id="updateStudentCountAndCorrectCountByCorrectQuestionIdList" parameterType="java.util.List">
+        UPDATE tb_correct_rate
+        SET student_count = student_count + 1, correct_count = correct_count + 1
+        WHERE id in
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="updateStudentCountByIncorrectQuestionIdList" parameterType="java.util.List">
+        UPDATE tb_correct_rate
+        SET student_count = student_count + 1
+        WHERE id in
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </update>
+
+<!--    이무현-->
+
+
+<!--    최경락-->
+
+
+<!--    최재혁-->
+
+
+</mapper>

@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.chunjae.report.mapper.ReportMapper">
+
+    <select id="record" resultType="kr.co.chunjae.report.dto.CheckDTO">
+        SELECT A.paper_id, A.id AS paper_result_id,
+            B.subject_id , C.name AS subject_name, B.paper_type_id AS paper_round
+        FROM tb_paper_result A
+        INNER JOIN tb_paper B
+        ON A.paper_id = B.id
+        INNER JOIN tb_subject C
+        ON B.subject_id = C.id
+        WHERE A.student_phone = #{id} AND A.finished = 'Y'
+        ORDER BY B.subject_id, B.paper_type_id
+    </select>
+
+    <select id="examInfo" parameterType="kr.co.chunjae.report.dto.ExamReqDTO" resultType="kr.co.chunjae.report.dto.ExamInfoDTO">
+        SELECT A.name, A.grade, B.start_timestamp
+        FROM tb_student A
+        INNER JOIN tb_paper_result B
+        ON A.phone = B.student_phone
+        WHERE A.phone = #{id} AND B.paper_id = #{paperId} AND B.id = #{paperResultId}
+    </select>
+
+    <select id="summary" parameterType="kr.co.chunjae.report.dto.ExamReqDTO" resultType="kr.co.chunjae.report.dto.SummaryDTO">
+        SELECT A.question_count,
+            count(CASE WHEN C.correct = 'Y' THEN C.question_id END) AS correct_count,
+            sum(CASE WHEN C.correct = 'Y' THEN D.score ELSE 0 END) AS score
+        FROM tb_paper A
+        INNER JOIN tb_paper_result B
+        ON A.id = B.paper_id
+        INNER JOIN tb_question_result C
+        ON B.id = C.paper_result_id
+        INNER JOIN tb_question D
+        ON C.question_id = D.id
+        WHERE A.id = #{paperId} AND B.student_phone = #{id}
+            AND C.paper_result_id = #{paperResultId}
+    </select>
+
+<!--    tb_correct_rate 테이블을 사용하지 않고 서브 쿼리를 이용해 정답율 구하는 쿼리-->
+<!--    <select id="correctionTwo" parameterType="kr.co.chunjae.report.dto.ExamReqDTO" resultType="kr.co.chunjae.report.dto.CorrectionTwoDTO">-->
+<!--        SELECT A.id as question_id,-->
+<!--            B.paper_result_id,-->
+<!--            (SELECT name FROM tb_section WHERE id = A.section_id) AS section_name,-->
+<!--            (SELECT name FROM tb_unit WHERE id = A.unit_id) AS unit_name,-->
+<!--            B.correct,-->
+<!--            floor((SELECT COUNT(id) FROM tb_question_result WHERE question_id = A.id AND correct = 'Y') /-->
+<!--            (SELECT COUNT(id) FROM tb_question_result WHERE question_id = A.id) * 100)  AS correct_rate-->
+<!--        FROM tb_question A-->
+<!--        INNER JOIN tb_question_result B-->
+<!--        ON A.id = B.question_id-->
+<!--        WHERE A.paper_id = #{examId} AND B.student_phone = #{id} AND B.paper_result_id = #{examResultId}-->
+<!--        ORDER BY A.id;-->
+<!--    </select>-->
+
+    <select id="correction" parameterType="kr.co.chunjae.report.dto.ExamReqDTO" resultType="kr.co.chunjae.report.dto.CorrectionDTO">
+        SELECT A.id as question_id,
+        B.paper_result_id,
+        (SELECT name FROM tb_section WHERE id = A.section_id) AS section_name,
+        (SELECT name FROM tb_unit WHERE id = A.unit_id) AS unit_name,
+        B.correct,
+        floor(C.correct_count / C.student_count * 100) AS correct_rate
+        FROM tb_question A
+        INNER JOIN tb_question_result B
+        ON A.id = B.question_id
+        INNER JOIN tb_correct_rate C
+        ON A.id = C.id
+        WHERE A.paper_id = #{paperId} AND B.student_phone = #{id} AND B.paper_result_id = #{paperResultId}
+        ORDER BY A.id;
+    </select>
+
+    <select id="difficultyAchievementRate" parameterType="kr.co.chunjae.report.dto.ExamReqDTO" resultType="kr.co.chunjae.report.dto.ChartDTO">
+        SELECT B.difficulty as criteria,
+            floor(sum(A.correct_count)/sum(A.student_count)*100) AS overall_average,
+            floor(count(CASE WHEN C.student_phone= #{id} AND C.paper_result_id = #{paperResultId} AND C.correct='Y' THEN C.id END)
+            /count(CASE WHEN C.student_phone= #{id} AND C.paper_result_id = #{paperResultId} THEN C.id END)*100) AS my_average
+        FROM tb_correct_rate A
+        INNER JOIN tb_question B ON A.id = B.id
+        INNER JOIN tb_question_result C ON B.id = C.question_id
+        WHERE B.paper_id = #{paperId}
+        GROUP BY B.difficulty
+        ORDER BY B.difficulty
+    </select>
+
+    <select id="sectionAchievementRate" parameterType="kr.co.chunjae.report.dto.ExamReqDTO" resultType="kr.co.chunjae.report.dto.ChartDTO">
+        SELECT D.name as criteria,
+            floor(sum(A.correct_count)/sum(A.student_count)*100) AS overall_average,
+            floor(count(CASE WHEN C.student_phone= #{id} AND C.paper_result_id = #{paperResultId} AND C.correct='Y' THEN C.id END)
+            /count(CASE WHEN C.student_phone= #{id} AND C.paper_result_id = #{paperResultId} THEN C.id END)*100) AS my_average
+        FROM tb_correct_rate A
+        INNER JOIN tb_question B ON A.id = B.id
+        INNER JOIN tb_question_result C ON B.id = C.question_id
+        INNER JOIN tb_section D ON B.section_id = D.id
+        WHERE B.paper_id = #{paperId}
+        GROUP BY B.section_id
+        ORDER BY B.section_id
+    </select>
+</mapper>

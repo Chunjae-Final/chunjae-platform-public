@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.chunjae.paper_result.mapper.PaperResultMapper">
+<!--    신수진-->
+    <!-- 시험지에 대한 결과 데이터를 생성한다. -->
+    <insert id="newPaperResult" useGeneratedKeys="true" keyProperty="newPaperResultId"
+            parameterType="kr.co.chunjae.first.dto.newPaperResultDTO">
+        INSERT INTO tb_paper_result (student_phone, paper_id, start_timestamp, last_access_timestamp)
+        VALUES (#{studentPhone}, #{paperId}, NOW(), NOW())
+    </insert>
+
+    <!-- 응시할 시험지에 대한 데이터 유무를 판단한다. -->
+    <!-- 조건에 해당하는 시험지 결과 데이터가 있을 시, 가장 최근에 응시한 id 값을 추출한다. -->
+    <!-- 조건에 해당하는 시험지 결과 데이터가 없을 시, -1을 추출한다. -->
+    <select id="existPaperResult" parameterType="kr.co.chunjae.first.dto.paperResultDTO"
+            resultType="java.lang.Integer">
+        SELECT CASE WHEN COUNT(id) > 0 THEN MAX(id) ELSE -1 END
+        FROM tb_paper_result
+        WHERE paper_id = #{paperId} AND student_phone = #{studentPhone} AND finished = 'N'
+    </select>
+
+    <!-- 최종 제출 시간 및 유무를 반영한다. -->
+    <update id="paperFinished" parameterType="java.util.Map">
+        UPDATE tb_paper_result
+        SET end_timestamp = NOW(), finished = 'Y'
+        WHERE paper_id = #{paperId}
+        AND student_phone = #{studentPhone}
+    </update>
+
+    <!-- 해당 시험지의 최종 제출 이력을 확인한다. -->
+    <select id="finishedPaperCount" parameterType="kr.co.chunjae.first.dto.paperFinishedDTO"
+            resultType="java.lang.Integer">
+        SELECT COUNT(id)
+        FROM tb_paper_result
+        WHERE student_phone = #{studentPhone}
+        AND paper_id = #{paperId}
+        AND finished = 'Y'
+    </select>
+
+    <!-- 재응시 이후 최종 제출 시, 기존 최종 제출 이력을 삭제한다. -->
+    <delete id="deleteFinishedPaper" parameterType="kr.co.chunjae.first.dto.paperFinishedDTO">
+        DELETE FROM tb_paper_result
+        WHERE student_phone = #{studentPhone}
+        AND paper_id = #{paperId}
+        AND finished = 'Y'
+    </delete>
+
+    <!-- 응시 중인 시험지의 시험 시작 시간, 최근 액세스 시간을 가져온다. -->
+<!--    <select id="loadPaperTimestamp"-->
+<!--            parameterType="kr.co.chunjae.first.dto.paperResultDTO" resultType="java.util.Date">-->
+<!--        SELECT start_timestamp, last_access_timestamp-->
+<!--        FROM tb_paper_result-->
+<!--        WHERE student_phone = ${studentPhone}-->
+<!--        AND paper_id = #{paperId}-->
+<!--        AND finished = 'N'-->
+<!--    </select>-->
+
+    <!-- 응시 중인 시험지의 최종 액세스 시간을 업데이트한다. -->
+    <update id="updateLastAccessTime"
+            parameterType="kr.co.chunjae.first.dto.saveStudentAnswerDTO">
+        UPDATE tb_paper_result
+        SET last_access_timestamp = NOW()
+        WHERE id = #{paperResultId}
+    </update>
+
+
+
+
+
+<!--    변재혁-->
+    <insert id="generateNewPaperResultId" parameterType="kr.co.chunjae.test.GenerateNewPaperResultIdDto"
+        useGeneratedKeys="true" keyColumn="id" keyProperty="generatedResultId">
+        INSERT
+        INTO tb_paper_result (student_phone, paper_id, start_timestamp, last_access_timestamp, spend_time)
+        VALUES(#{studentPhone}, #{paperId}, NOW(), NOW(), 0)
+    </insert>
+
+    <select id="checkStudentFinishedPaper" parameterType="kr.co.chunjae.test.CheckStudentFinishedPaperDto"
+            resultType="java.lang.Integer">
+        <!-- 특정한 시험지 중, 아직 최종 제출을 안 했다면 그 시험지의 시험응시 결과(tb_paper_result)의 id를 조회
+            (가장 최근에 풀었던 것을 조회하기 위해 MAX 사용)
+            만약 현재 해당 시험지를 풀고 있지 않거나 혹은 최종 제출 버튼을 클릭해서 finished 가 Y 라면, -1 return
+         -->
+        SELECT IFNULL(MAX(id), -1) id
+        FROM tb_paper_result
+        WHERE student_phone = #{studentPhone} AND paper_id = #{paperId} AND finished = 'N'
+    </select>
+
+    <select id="getPaperResultIdListForDelete" parameterType="java.util.Map" resultType="java.lang.Integer">
+        SELECT id
+        FROM tb_paper_result tpr
+        WHERE id != #{paperResultId} AND paper_id = #{paperId} AND student_phone = #{studentPhone}
+    </select>
+
+    <update id="writeEndTimestampAndChangeFinishedToY" parameterType="java.lang.Integer">
+        UPDATE tb_paper_result
+        SET end_timestamp = NOW(), finished = 'Y'
+        WHERE id = #{paperResultId}
+    </update>
+
+    <delete id="deletePaperResultByIdList" parameterType="java.util.List">
+        DELETE
+        FROM tb_paper_result
+        WHERE id in
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="queryForSpecifyStatusValuesInPaperListPage"
+            parameterType="java.util.Map" resultType="kr.co.chunjae.test.PaperStatusDto">
+        SELECT tp.id AS paper_id, IFNULL(finished, 'NEVER STARTED YET') AS status
+        FROM tb_paper AS tp LEFT OUTER JOIN
+            (SELECT paper_id, finished FROM tb_paper_result WHERE tb_paper_result.student_phone = #{studentPhone}) AS tpr
+                ON tp.id = tpr.paper_id
+        WHERE tp.id IN
+        <foreach collection="paperIdList" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        ORDER BY paper_id ASC, status DESC
+    </select>
+
+    <select id="getLastAccessTimestampAndSpendTime" resultType="kr.co.chunjae.test.LastAccessTimestampAndSpendTimeDto">
+        SELECT last_access_timestamp, spend_time
+        FROM tb_paper_result
+        WHERE id = #{paperResultId}
+    </select>
+
+    <update id="updateLastAccessTimestampAndSpendTime">
+        UPDATE tb_paper_result
+        SET spend_time = #{updatedSpendTime}, last_access_timestamp = NOW()
+        WHERE id = #{paperResultId}
+    </update>
+
+    <select id="getStartTimestampByPaperResultId" parameterType="java.lang.Integer" resultType="java.time.LocalDateTime">
+        SELECT start_timestamp
+        FROM tb_paper_result
+        WHERE id = #{paperResultId}
+    </select>
+
+    <select id="getPaperIdByPaperResultId" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT paper_id
+        FROM tb_paper_result
+        WHERE id = #{paperResultId}
+    </select>
+
+<!--    이무현-->
+
+
+<!--    최경락-->
+
+
+<!--    최재혁-->
+
+
+</mapper>

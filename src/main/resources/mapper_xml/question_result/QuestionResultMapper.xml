@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.chunjae.question_result.mapper.QuestionResultMapper">
+<!--    신수진-->
+    <insert id="saveStudentAnswer"
+            parameterType="kr.co.chunjae.first.dto.saveStudentAnswerDTO">
+        INSERT
+        INTO tb_question_result (student_phone, paper_result_id, question_id, student_choice)
+        VALUES (#{studentPhone}, #{paperResultId}, #{questionId}, #{studentChoice})
+    </insert>
+
+    <!-- 답변 선택이 완료된 문항의 정답을 가져온다. -->
+    <select id="questionAnswer" parameterType="Integer" resultType="java.lang.String">
+        SELECT DISTINCT a.answer
+        FROM tb_question a
+        JOIN tb_question_result b on a.id = #{questionId}
+    </select>
+
+    <!-- 각 문항을 채점하고 결과를 저장한다. -->
+    <update id="studentAnswerCorrect" parameterType="java.util.Map">
+        UPDATE tb_question_result
+        SET correct =
+        <choose>
+            <when test="answer eq studentChoice">'Y'</when>
+            <otherwise>'N'</otherwise>
+        </choose>
+        WHERE paper_result_id = #{saveStudentAnswerDTO.paperResultId}
+        AND student_phone = #{saveStudentAnswerDTO.studentPhone}
+        AND question_id = #{saveStudentAnswerDTO.questionId}
+    </update>
+
+    <!-- 문항을 푼 이력이 있는지 확인한다. -->
+    <select id="existStudentAnswer" resultType="java.lang.Integer"
+            parameterType="kr.co.chunjae.first.dto.saveStudentAnswerDTO">
+        SELECT COUNT(student_choice)
+        FROM tb_question_result
+        WHERE student_phone = #{studentPhone}
+        AND paper_result_id = #{paperResultId}
+        AND question_id = #{questionId}
+    </select>
+
+    <!-- 기존 이력을 삭제한다. -->
+    <delete id="deleteStudentAnswer"
+            parameterType="kr.co.chunjae.first.dto.saveStudentAnswerDTO">
+        DELETE
+        FROM tb_question_result
+        WHERE student_phone = #{studentPhone}
+        AND paper_result_id = #{paperResultId}
+        AND question_id = #{questionId}
+    </delete>
+
+    <!-- 응시 이력이 존재하는 시험지의 사용자 답안을 모두 추출한다. -->
+    <select id="studentChoiceAnswerList" parameterType="java.util.Map"
+            resultType="kr.co.chunjae.first.dto.studentChoiceAnswerDTO">
+        SELECT question_id, student_choice
+        FROM tb_question_result
+        WHERE student_phone = #{studentPhone} AND paper_result_id = #{paperResultId}
+    </select>
+
+    <!-- 응시 중인 시험지 결과 중 사용자가 답한 문항 ID를 뽑는다. (문항 ID 기준 오름차순 정렬) -->
+    <select id="findQuestionResult" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT question_id
+        FROM tb_question_result
+        WHERE paper_result_id = #{paperResultId}
+        ORDER BY question_id ASC
+    </select>
+    
+    <!-- 풀지 않은 문항에 대하여 빈 값을 채워주고, 'N'으로 채점한다. -->
+    <insert id="insertUnansweredQuestion" parameterType="java.util.Map">
+        INSERT INTO tb_question_result
+        (student_choice, correct, paper_result_id, question_id, student_phone)
+        VALUES
+        <foreach collection="unansweredList" item="questionId" separator=",">
+            ('{}', 'N', #{paperResultId}, #{questionId}, #{studentPhone})
+        </foreach>
+    </insert>
+
+    <!-- 사용자가 해결한 문제 데이터를 불러온다. -->
+    <select id="findSolvedQuestion" parameterType="kr.co.chunjae.first.dto.paperFinishedDTO"
+            resultType="kr.co.chunjae.first.dto.saveCorrectRateDTO">
+        SELECT question_id, correct
+        FROM tb_question_result
+        WHERE paper_result_id = #{paperResultId}
+    </select>
+
+    <!-- 통계 테이블에 존재하는 문항 목록을 불러온다. -->
+    <select id="correctRateQuestion" resultType="java.lang.Integer">
+        SELECT id
+        FROM tb_correct_rate
+        ORDER BY id ASC
+    </select>
+
+    <!-- 통계 테이블에 존재하지 않는 문항을 채운다. -->
+    <insert id="addQuestionId" parameterType="java.lang.Integer">
+        INSERT
+        INTO tb_correct_rate (id, student_count, correct_count)
+        VALUES (#{questionId}, 0, 0)
+    </insert>
+
+    <!-- 각 문항에 대한 데이터를 통계 테이블에 반영한다. -->
+    <!-- 맞은 문항에 대한 통계 데이터 축적 -->
+    <update id="saveCorrectRateByCorrectQuestion" parameterType="java.util.List">
+            UPDATE tb_correct_rate
+            SET student_count = student_count + 1, correct_count = correct_count + 1
+            WHERE id IN
+        <foreach collection="correctQuestion" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <!-- 틀린 문항에 대한 통계 데이터 축적 -->
+    <update id="saveCorrectRateByIncorrectQuestion" parameterType="java.util.List">
+            UPDATE tb_correct_rate
+            SET student_count = student_count + 1
+            WHERE id in
+        <foreach collection="incorrectQuestion" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </update>
+
+
+<!--    변재혁-->
+    <delete id="deletePreviousStudentChoiceAnswer" parameterType="java.util.Map">
+        DELETE
+        FROM tb_question_result
+        WHERE paper_result_id = #{paperResultId} AND question_id = #{questionId}
+    </delete>
+
+    <insert id="insertResultOfCheckStudentAnswer" parameterType="java.util.Map">
+        INSERT
+        INTO tb_question_result (student_phone, paper_result_id, question_id, student_choice, correct)
+        VALUES (#{studentPhone}, #{paperResultId}, #{questionId}, #{studentChoice}, #{correct})
+    </insert>
+
+    <select id="getAllStudentChoicesByPaperResultId" parameterType="java.util.Map" resultType="kr.co.chunjae.test.StudentChoiceDto">
+        SELECT question_id, student_choice
+        FROM tb_question_result
+        WHERE student_phone = #{studentPhone} AND paper_result_id = #{paperResultId}
+    </select>
+
+    <delete id="deleteQuestionResultByPaperResultId" parameterType="java.util.List">
+        DELETE
+        FROM tb_question_result
+        WHERE paper_result_id IN
+        <foreach collection="list" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+    <select id="getAllSolvedQuestionIdListByPaperResultId" parameterType="java.lang.Integer" resultType="java.lang.Integer">
+        SELECT question_id
+        FROM tb_question_result tqr
+        WHERE paper_result_id = #{paperResultId}
+    </select>
+
+    <insert id="fillUpNotSolvedQuestions" parameterType="java.util.HashMap">
+        INSERT
+        INTO tb_question_result (student_phone, paper_result_id, question_id, student_choice, correct)
+        VALUES
+        <foreach collection="questionIdList" item="item" separator=",">
+            (#{studentPhone}, #{paperResultId}, #{item}, '{}', 'N')
+        </foreach>
+    </insert>
+
+    <select id="getQuestionIdAndCorrectListByPaperResultId" parameterType="java.lang.Integer" resultType="java.util.Map">
+        SELECT question_id, correct
+        FROM tb_question_result
+        WHERE paper_result_id = #{paperResultId}
+    </select>
+
+    <select id="getStudentChoiceByPaperResultIdAndQuestionId" resultType="java.lang.String">
+        SELECT student_choice
+        FROM tb_question_result
+        WHERE paper_result_id = #{paperResultId} AND question_id = #{questionId}
+    </select>
+
+<!--    이무현-->
+
+
+<!--    최경락-->
+
+
+<!--    최재혁-->
+
+
+</mapper>

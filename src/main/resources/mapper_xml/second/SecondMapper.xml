@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.co.chunjae.second.mapper.SecondMapper">
+    <insert id="saveSecondResult" parameterType="kr.co.chunjae.second.dto.SecondResultDto">
+        insert into tb_question_result(paper_result_id, student_phone, question_id, student_choice, correct) values (#{paperResultId},#{studentPhone},
+        #{questionId}, #{studentChoice}, #{correct})
+    </insert>
+
+    <select id="selectSecondResult" parameterType="kr.co.chunjae.second.dto.SecondResultDto" resultType="integer">
+        select count(*) from tb_question_result where question_id = #{questionId} and paper_result_id = #{paperResultId}
+    </select>
+
+    <delete id="deleteSecondResult" parameterType="integer">
+        delete from tb_question_result where question_id = #{questionId}
+    </delete>
+
+<!--    <select id="correctAnswer" parameterType="kr.co.chunjae.second.dto.SecondResultDto" resultType="kr.co.chunjae.second.dto.SecondResultDto">-->
+<!--        select tq.id, tq.answer, tqr.student_choice from tb_question tq left outer join tb_question_result tqr on tq.id = tqr.question_id-->
+<!--        where tqr.paper_result_id = #{paperResultId} and tqr.question_id = #{questionId}-->
+<!--    </select>-->
+
+    <select id="selectRealAnswer" parameterType="Integer" resultType="String">
+        select answer from tb_question where id = #{questionId}
+    </select>
+
+    <insert id="addPaperResultId" parameterType="kr.co.chunjae.second.dto.StartExamDto" useGeneratedKeys="true" keyProperty="paperResultId">
+        insert into tb_paper_result(student_phone, paper_id, start_timestamp) values (#{studentPhone}, #{paperId}, now())
+    </insert>
+
+    <select id="checkTestProgress" parameterType="kr.co.chunjae.second.dto.SecondResultDto" resultType="integer">
+        select count(*) from tb_paper_result where student_phone = #{studentPhone} and paper_id = #{paperId} and finished = "N"
+    </select>
+
+    <select id="selectPaperResultId" parameterType="kr.co.chunjae.second.dto.StartExamDto" resultType="integer">
+        select id from tb_paper_result where student_phone = #{studentPhone} and paper_id = #{paperId} and finished = "N"
+    </select>
+
+    <select id="userChosenAnswer" parameterType="kr.co.chunjae.second.dto.UserAnswerDto" resultType="kr.co.chunjae.second.dto.UserAnswerDto">
+        select  question_id, student_choice from tb_question_result where paper_result_id = #{paperResultId} and student_phone = #{studentPhone}
+    </select>
+
+    <select id="selectPreviousExam" parameterType="kr.co.chunjae.second.dto.FinishExamDto" resultType="Integer">
+    select id from tb_paper_result where student_phone = #{studentPhone} and paper_id = #{paperId} and finished = "Y"
+    </select>
+
+    <update id="finishExam" parameterType="kr.co.chunjae.second.dto.FinishExamDto">
+        update tb_paper_result set finished = "Y", end_timestamp = now() where id = #{paperResultId}
+    </update>
+
+    <delete id="deletePreExamAnswer" parameterType="Integer">
+        delete from tb_question_result where paper_result_id = #{previousExamId}
+    </delete>
+
+    <delete id="deletePreExam" parameterType="Integer">
+        delete from tb_paper_result where id = #{previousExamId}
+    </delete>
+
+    <select id="getQuestionId" parameterType="kr.co.chunjae.second.dto.FinishExamDto" resultType="Integer">
+        select id from tb_question where paper_id = #{paperId}
+
+    </select>
+
+    <select id="getUserAnswerId" parameterType="kr.co.chunjae.second.dto.FinishExamDto" resultType="Integer">
+        select question_id from tb_question_result where paper_result_id = #{paperResultId}
+    </select>
+
+    <insert id="insertNull" parameterType="kr.co.chunjae.second.dto.FinishExamDto">
+        insert into tb_question_result (student_phone, paper_result_id, question_id, student_choice, correct) values
+        <foreach collection="setNullList" item="item" separator=",">
+            (#{finishExamDto.studentPhone}, #{finishExamDto.paperResultId}, #{item}, '{}', 'N')
+        </foreach>
+    </insert>
+
+    <select id="getTimeFromServer" parameterType="kr.co.chunjae.second.dto.GetTimeDto" resultType="java.time.LocalDateTime">
+        select start_timestamp from tb_paper_result where id = #{paperResultId} and student_phone = #{studentPhone}
+    </select>
+
+    <select id="checkQuestionIdExist" parameterType="Integer" resultType="Integer">
+        select count(*) from tb_correct_rate where id = #{questionId}
+    </select>
+
+    <insert id="insertQuestionId" parameterType="Integer">
+        insert into tb_correct_rate (id,student_count,correct_count) values (#{questionId},0,0)
+    </insert>
+
+    <select id="userCorrectResult" parameterType="kr.co.chunjae.second.dto.FinishExamDto" resultType="Integer">
+        select question_id from tb_question_result where paper_result_id = #{paperResultId} and correct = "Y"
+    </select>
+
+    <update id="userCorrectRateUpdate" parameterType="java.util.HashSet">
+        UPDATE tb_correct_rate
+        SET student_count = student_count + 1, correct_count = correct_count + 1
+        WHERE id in
+        <foreach collection="correctQuestionIdList" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </update>
+
+    <update id="userinCorrectRateUpdate" parameterType="java.util.List">
+        UPDATE tb_correct_rate
+        SET student_count = student_count + 1
+        WHERE id in
+        <foreach collection="incorrectQuestionIdList" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </update>
+
+
+</mapper>
